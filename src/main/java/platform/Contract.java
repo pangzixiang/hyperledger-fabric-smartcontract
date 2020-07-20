@@ -30,7 +30,9 @@ public final class Contract implements ContractInterface {
         USER_NOT_EXISTING("User '%s' does not exist."),
         RULE_NOT_EXIST("rule '%s' not exist"),
         GROUP_BUYING_NOT_EXIST("this group buying order '%s' not exist");
-
+        GROUP_BUYING_NOT_SUCCESS("this group buying order '%s' not success");
+        Transaction_ERROR("Group buying order '%s' not belong to rule '%s'");
+        Transaction_NOT_EXIST("this transaction '%s' not exist")
         private String tmpl;
 
         private Message(String tmpl) {
@@ -90,14 +92,74 @@ public final class Contract implements ContractInterface {
         JSONObject groupBuying = JSONObject.parseObject(groupBuyingString);
 
         if (groupBuying.getString("currentNum").equals(groupBuying.getString("groupNum"))) {
-            int oldOrderNum = Integer.parseInt(discountRule.getString("orderNum"));
-            String oldOrderIDs = discountRule.getString("orderIDs");
-            discountRule.put("orderNum", String.valueOf(oldOrderNum + 1));
-            discountRule.put("orderIDs", oldOrderIDs + groupBuyingID + "/");
+            if(groupBuying.getString("discountRuleID").equals(discountRule.getString("discountRule"))){
+                discountRule.put("orderNum", "0");
+                discountRule.put("orderIDs", "");
+                String payerIDs = groupBuying.getString("userID");
+                String payments = discountRule.getString("firstBuyerPrice");
+                int receivables = Integer.parseInt(discountRule.getString("firstBuyerPrice"));
+                for(int i =2;i<=Integer.parseInt(groupBuying.getString("groupNum");i++)){
+                    String participateBuyingString = stub.getStringState(groupBuyingID+"-"+String.valueOf(i));
+                    JSONObject participateBuying = JSONObject.parseObject(participateBuyingString);
+                    payerIDs += "/" + participateBuying..getString("userID");
+                    payments += "/" + discountRule.getString("otherBuyerPrice");
+                    receivables += Integer.parseInt(discountRule.getString("otherBuyerPrice"));
+                }
+                String payerIDs = discountRule.getString("sellerID");
+                Map<String,String> map = new HashMap<>();
+                map.put("transState","0");   //0代表支付待完成 1代表支付已完成 -1代表违约
+                map.put("payerIDs", payerIDs);
+                map.put("payee",sellerID);
+                map.put("payments",payments);
+                map.put("receivables",receivables);
+                //创建交易单
+                stub.putStringState(groupBuyingID+"-"+discountRuleID,JSON.toJSONString(map));
+                
+            }else{
+                String errorMessage = String.format(Message.Transaction_ERROR.template(), groupBuyingID, discountRuleID);
+                System.out.println(errorMessage);
+                throw new ChaincodeException(errorMessage);
+            }
+        }else{
+            String errorMessage = String.format(Message.GROUP_BUYING_NOT_SUCCESS.template(), groupBuyingID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
         }
+        
 
     }
 
+    @Transaction(name = "ChangeTrans", intent = Transaction.TYPE.SUBMIT)
+    public String queryCredit(final Context ctx, final String transID, final String transState) {
+        ChaincodeStub stub = ctx.getStub();
+        String transactionString = stub.getStringState(transID);
+        if (transactionString.isEmpty()) {
+            String errorMessage = String.format(Message.Transaction_NOT_EXIST.template(), transID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        JSONObject transaction = JSONObject.parseObject(transactionString);
+        transaction.put("transState", transState);
+    }
+
+    @Transaction(name = "QueryTrans", intent = Transaction.TYPE.EVALUATE)
+    public String queryCredit(final Context ctx, final String transID) {
+        ChaincodeStub stub = ctx.getStub();
+        String transactionString = stub.getStringState(transID);
+        if (transactionString.isEmpty()) {
+            String errorMessage = String.format(Message.Transaction_NOT_EXIST.template(), transID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        JSONObject transaction = JSONObject.parseObject(transactionString);
+        String state = "";
+        switch(transaction.getString("transState")){
+            case "0": state="支付待完成";break;
+            case "1": state="支付已完成";break;
+            case "-1": state="用户已违约";break;
+        }
+        return "交易" + transID + "的交易状态为：" + state;
+    }
 
     @Transaction(name = "QueryCredit", intent = Transaction.TYPE.EVALUATE)
     public String queryCredit(final Context ctx, final String userID) {
