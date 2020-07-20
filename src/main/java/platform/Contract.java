@@ -1,4 +1,5 @@
 package platform;
+import com.alibaba.fastjson.JSONObject;
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.annotation.*;
@@ -25,8 +26,15 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 @Default
 public final class Contract implements ContractInterface{
     enum Message {
+<<<<<<< HEAD
         ARG_NUM_WRONG("Incorrect number of arguments '%s'");
         USER_NOT_EXISTING("User '%s' does not exist.");
+=======
+        ARG_NUM_WRONG("Incorrect number of arguments '%s'"),
+        RULE_NOT_EXIST("rule '%s' not exist"),
+        GROUP_BUYING_NOT_EXIST("this group buying order '%s' not exist");
+
+>>>>>>> a26f2732d60cb1e9dbde6ea297bf13ba1f1b7de9
 
         private String tmpl;
 
@@ -60,14 +68,33 @@ public final class Contract implements ContractInterface{
 
         int newCredit = Integer.parseInt(oldCredit) + Integer.parseInt(changeValue);
         if (newCredit < 0){
-            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(),changeValue);
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage);
+            stub.putStringState(userID+"-Credit",String.valueOf(0));
         }
 
         stub.putStringState(userID+"-Credit",String.valueOf(newCredit));
 
     }
+
+    @Transaction(name = "InitTrans", intent = Transaction.TYPE.SUBMIT)
+    public void initTrans(final Context ctx, final String discountRuleID, final String groupBuyingID){
+        ChaincodeStub stub = ctx.getStub();
+        String discountRuleString = stub.getStringState(discountRuleID);
+        if (discountRuleString.isEmpty()){
+            String errorMessage = String.format(Message.RULE_NOT_EXIST.template(), discountRuleID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        JSONObject discountRule = JSONObject.parseObject(discountRuleString);
+
+        String groupBuyingString = stub.getStringState(groupBuyingID);
+        if (groupBuyingString.isEmpty()){
+            String errorMessage = String.format(Message.GROUP_BUYING_NOT_EXIST.template(), groupBuyingID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        JSONObject groupBuying = JSONObject.parseObject(groupBuyingString);
+    }
+
 }
 
     @Transaction(name = "QueryCredit", intent = Transaction.TYPE.EVALUATE)
