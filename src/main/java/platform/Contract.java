@@ -24,5 +24,13 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 )
 @Default
 public final class Contract implements ContractInterface{
+    enum Message {
 
+    }
+
+    @Transaction(name = "InitCredit", intent = Transaction.TYPE.SUBMIT)
+    public void initCredit(final Context ctx, final String userID){
+        ChaincodeStub stub = ctx.getStub();
+        stub.putStringState(userID+"-Credit", "100");
+    }
 }
