@@ -81,7 +81,7 @@ public final class Contract implements ContractInterface {
      * @param duration
      */
     @Transaction(name = "Open", intent = Transaction.TYPE.SUBMIT)
-    public void query(final Context ctx, final String discountRuleID, final String duration) {
+    public void open(final Context ctx, final String discountRuleID, final String duration) {
         ChaincodeStub stub = ctx.getStub();
         JSONObject discountRule = JSONObject.parseObject(stub.getStringState(discountRuleID));
         discountRule.put("duration", Integer.parseInt(duration) * 3600);    //用户输入时长单位为分钟
@@ -145,7 +145,7 @@ public final class Contract implements ContractInterface {
      * @return orderNum and orderIDs
      */
     @Transaction(name = "QueryParticipation", intent = Transaction.TYPE.EVALUATE)
-    public String query(final Context ctx, final String discountRuleID) {
+    public String queryParticipation(final Context ctx, final String discountRuleID) {
         ChaincodeStub stub = ctx.getStub();
         JSONObject discountRule = JSONObject.parseObject(stub.getStringState(discountRuleID));
 
@@ -174,7 +174,7 @@ public final class Contract implements ContractInterface {
      * @return ruleState and Residual time
      */
     @Transaction(name = "QueryState", intent = Transaction.TYPE.EVALUATE)
-    public String transfer(final Context ctx, final String discountRuleID) {
+    public String queryState(final Context ctx, final String discountRuleID) {
         ChaincodeStub stub = ctx.getStub();
         JSONObject discountRule = JSONObject.parseObject(stub.getStringState(discountRuleID));
 
