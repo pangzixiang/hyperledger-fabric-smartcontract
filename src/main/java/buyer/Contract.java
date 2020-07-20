@@ -30,8 +30,8 @@ import com.alibaba.fastjson.*;
 @Default
 public final class Contract implements ContractInterface {
     enum Message {
-        NUM_EXCEED("当前人数大于设定的拼团人数"),
-        RULE_STATE_ERROR("当前优惠规则不可用");
+        NUM_EXCEED("num exceed"),
+        RULE_STATE_ERROR("rule not valid");
 
         private String tmpl;
 
@@ -114,6 +114,6 @@ public final class Contract implements ContractInterface {
         JSONObject groupBuying =  JSONObject.parseObject(stub.getStringState(groupBuyingID));
         String groupNum = groupBuying.getString("groupNum");
         String currentNum = groupBuying.getString("currentNum");
-        return "成团人数：" + groupNum + ", 当前人数: " + currentNum;
+        return "成团人数:" + groupNum + ", 当前人数:" + currentNum;
     }
 }
