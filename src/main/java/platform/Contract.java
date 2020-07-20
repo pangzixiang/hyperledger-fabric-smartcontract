@@ -88,6 +88,14 @@ public final class Contract implements ContractInterface{
             throw new ChaincodeException(errorMessage);
         }
         JSONObject groupBuying = JSONObject.parseObject(groupBuyingString);
+
+        if (groupBuying.getString("currentNum").equals(groupBuying.getString("groupNum"))){
+            int oldOrderNum = Integer.parseInt(discountRule.getString("orderNum"));
+            String oldOrderIDs = discountRule.getString("orderIDs");
+            discountRule.put("orderNum", String.valueOf(oldOrderNum+1));
+            discountRule.put("orderIDs", oldOrderIDs+groupBuyingID+"/");
+        }
+
     }
 
 }
