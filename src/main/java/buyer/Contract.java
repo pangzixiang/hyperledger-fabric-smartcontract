@@ -31,8 +31,16 @@ import com.alibaba.fastjson.*;
 @Default
 public final class Contract implements ContractInterface {
     enum Message {
+        NUM_EXCEED("当前人数大于设定的拼团人数");
+        private String tmpl;
 
+        private Message(String tmpl) {
+            this.tmpl = tmpl;
+        }
 
+        public String template() {
+            return this.tmpl;
+        }
     }
 
     /**
@@ -40,8 +48,7 @@ public final class Contract implements ContractInterface {
      * @param ctx context
      */
     @Transaction(name = "Init", intent = Transaction.TYPE.SUBMIT)
-    public void init(final Context ctx, final String userID, final String sellerID,
-                     final String groupNum, final String goodID){
+    public void init(final Context ctx, final String userID, final String sellerID, final String goodID){
         ChaincodeStub stub = ctx.getStub();
         String groupBuyingID = UUID.randomUUID().toString().replace("-","");
         String initTime = String.valueOf(System.currentTimeMillis());
@@ -50,7 +57,7 @@ public final class Contract implements ContractInterface {
         map.put("sellerID",sellerID);
         map.put("groupBuyingID",groupBuyingID);
         map.put("initTime",initTime);
-        map.put("groupNum",groupNum);
+        map.put("groupNum","50"); //需要改,查询优惠规则
         map.put("goodID",goodID);
         map.put("currentNum", "1");
         stub.putStringState(groupBuyingID,JSON.toJSONString(map));
@@ -69,6 +76,10 @@ public final class Contract implements ContractInterface {
         String participateTime = String.valueOf(System.currentTimeMillis());
         JSONObject groupBuying =  JSONObject.parseObject(stub.getStringState(groupBuyingID));
         String userNum = String.valueOf(Integer.parseInt((String) groupBuying.get("currentNum")) + 1);
+        if (Integer.parseInt(userNum) > Integer.parseInt((String) groupBuying.get("groupNum"))){
+            System.out.println(Message.NUM_EXCEED.template());
+            throw new ChaincodeException(Message.NUM_EXCEED.template());
+        }
         groupBuying.put("currentNum",userNum);
         stub.putStringState(groupBuyingID,groupBuying.toJSONString());
         Map<String,String> map = new HashMap<>();
@@ -76,5 +87,32 @@ public final class Contract implements ContractInterface {
         map.put("participateTime", participateTime);
         map.put("groupBuyingID",groupBuyingID);
         stub.putStringState(groupBuyingID+"-"+userNum,JSON.toJSONString(map));
+    }
+
+    /**
+     * Query Group Buying State
+     * @param ctx
+     * @param groupBuyingID
+     * @return
+     */
+    @Transaction(name = "QueryGroupBuying", intent = Transaction.TYPE.EVALUATE)
+    public String queryGroupBuying(final Context ctx, final String groupBuyingID){
+        ChaincodeStub stub = ctx.getStub();
+        JSONObject groupBuying =  JSONObject.parseObject(stub.getStringState(groupBuyingID));
+        String groupNum = (String) groupBuying.get("groupNum");
+        String currentNum = (String) groupBuying.get("currentNum");
+        return "成团人数：" + groupNum + ", 当前人数: " + currentNum;
+    }
+
+    /**
+     * Query User Credit
+     * @param ctx
+     * @param userID
+     * @return
+     */
+    @Transaction(name = "QueryCredit", intent = Transaction.TYPE.EVALUATE)
+    public String queryCredit(final Context ctx, final String userID){
+        ChaincodeStub stub = ctx.getStub();
+        return stub.getStringState(userID+"-Credit");
     }
 }
