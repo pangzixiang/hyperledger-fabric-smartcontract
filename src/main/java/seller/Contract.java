@@ -36,7 +36,7 @@ import com.alibaba.fastjson.*;
 public final class Contract implements ContractInterface {
     enum Message {
         DISCOUNTRULE_NOT_EXISTING("Discount rule '%s' does not exist."),
-        RULE_STATE_ERROR("It is already in this state! The state of this rule is %s now.");
+        RULE_STATE_ERROR("It is already in this state! The state of this rule is '%s' now.");
 
         private String tmpl;
 

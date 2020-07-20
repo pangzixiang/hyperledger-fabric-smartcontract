@@ -26,10 +26,15 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 @Default
 public final class Contract implements ContractInterface{
     enum Message {
+<<<<<<< HEAD
+        ARG_NUM_WRONG("Incorrect number of arguments '%s'");
+        USER_NOT_EXISTING("User '%s' does not exist.");
+=======
         ARG_NUM_WRONG("Incorrect number of arguments '%s'"),
         RULE_NOT_EXIST("rule '%s' not exist"),
         GROUP_BUYING_NOT_EXIST("this group buying order '%s' not exist");
 
+>>>>>>> a26f2732d60cb1e9dbde6ea297bf13ba1f1b7de9
 
         private String tmpl;
 
@@ -99,3 +104,15 @@ public final class Contract implements ContractInterface{
     }
 
 }
+
+    @Transaction(name = "QueryCredit", intent = Transaction.TYPE.EVALUATE)
+    public void initCredit(final Context ctx, final String userID){
+        ChaincodeStub stub = ctx.getStub();
+        String value = stub.getStringState(userID+"-Credit");
+        if (value.isEmpty()) {
+            String errorMessage = String.format(Message.USER_NOT_EXISTING.template(), userID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        return "用户" + userID +"的信用分为："+ value;
+    }
