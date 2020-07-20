@@ -7,7 +7,6 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import com.alibaba.fastjson.*;
 
 /**
@@ -48,9 +47,9 @@ public final class Contract implements ContractInterface {
      * @param ctx context
      */
     @Transaction(name = "Init", intent = Transaction.TYPE.SUBMIT)
-    public void init(final Context ctx, final String userID, final String sellerID, final String goodID){
+    public void init(final Context ctx, final String userID,
+                     final String sellerID,final String groupBuyingID, final String goodID){
         ChaincodeStub stub = ctx.getStub();
-        String groupBuyingID = UUID.randomUUID().toString().replace("-","");
         String initTime = String.valueOf(System.currentTimeMillis());
         Map<String,String> map = new HashMap<>();
         map.put("userID",userID);
@@ -102,17 +101,5 @@ public final class Contract implements ContractInterface {
         String groupNum = (String) groupBuying.get("groupNum");
         String currentNum = (String) groupBuying.get("currentNum");
         return "成团人数：" + groupNum + ", 当前人数: " + currentNum;
-    }
-
-    /**
-     * Query User Credit
-     * @param ctx
-     * @param userID
-     * @return
-     */
-    @Transaction(name = "QueryCredit", intent = Transaction.TYPE.EVALUATE)
-    public String queryCredit(final Context ctx, final String userID){
-        ChaincodeStub stub = ctx.getStub();
-        return stub.getStringState(userID+"-Credit");
     }
 }
