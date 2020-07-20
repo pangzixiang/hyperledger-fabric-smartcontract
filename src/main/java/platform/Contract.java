@@ -1,4 +1,5 @@
 package platform;
+import com.alibaba.fastjson.JSONObject;
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.annotation.*;
@@ -25,7 +26,9 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 @Default
 public final class Contract implements ContractInterface{
     enum Message {
-        ARG_NUM_WRONG("Incorrect number of arguments '%s'");
+        ARG_NUM_WRONG("Incorrect number of arguments '%s'"),
+        RULE_NOT_EXIST("rule '%s' not exist"),
+        GROUP_BUYING_NOT_EXIST("this group buying order '%s' not exist");
 
 
         private String tmpl;
@@ -47,20 +50,20 @@ public final class Contract implements ContractInterface{
     }
 
     @Transaction(name = "ChangeCredit", intent = Transaction.TYPE.SUBMIT)
-    public void changeCredit(final Context ctx, final String userID, final String changeValue){
+    public void changeCredit(final Context ctx, final String userID, final String type){
         ChaincodeStub stub = ctx.getStub();
         String oldCredit = stub.getStringState(userID+"-Credit");
         try {
-            Integer.valueOf(changeValue);
+            Integer.valueOf(type);
         }catch (Exception e){
-            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(),changeValue);
+            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(),type);
             System.out.println(errorMessage);
             throw new ChaincodeException(errorMessage,e);
         }
 
-        int newCredit = Integer.parseInt(oldCredit) + Integer.parseInt(changeValue);
+        int newCredit = Integer.parseInt(oldCredit) + Integer.parseInt(type);
         if (newCredit < 0){
-            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(),changeValue);
+            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(),type);
             System.out.println(errorMessage);
             throw new ChaincodeException(errorMessage);
         }
@@ -68,4 +71,25 @@ public final class Contract implements ContractInterface{
         stub.putStringState(userID+"-Credit",String.valueOf(newCredit));
 
     }
+
+    @Transaction(name = "InitTrans", intent = Transaction.TYPE.SUBMIT)
+    public void initTrans(final Context ctx, final String discountRuleID, final String groupBuyingID){
+        ChaincodeStub stub = ctx.getStub();
+        String discountRuleString = stub.getStringState(discountRuleID);
+        if (discountRuleString.isEmpty()){
+            String errorMessage = String.format(Message.RULE_NOT_EXIST.template(), discountRuleID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        JSONObject discountRule = JSONObject.parseObject(discountRuleString);
+
+        String groupBuyingString = stub.getStringState(groupBuyingID);
+        if (groupBuyingString.isEmpty()){
+            String errorMessage = String.format(Message.GROUP_BUYING_NOT_EXIST.template(), groupBuyingID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        JSONObject groupBuying = JSONObject.parseObject(groupBuyingString);
+    }
+
 }
