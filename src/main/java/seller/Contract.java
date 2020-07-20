@@ -1,11 +1,11 @@
 package seller;
 
 
-import org.hyperledger.fabric.contract.Context;    //引入事务上下文类，维护与交易逻辑相关的合同和交易信息
-import org.hyperledger.fabric.contract.ContractInterface;     //合约处理接口类,用来响应接收的事务处理
-import org.hyperledger.fabric.contract.annotation.*;//定义java注解的包
+import org.hyperledger.fabric.contract.Context;
+import org.hyperledger.fabric.contract.ContractInterface;
+import org.hyperledger.fabric.contract.annotation.*;
 import org.hyperledger.fabric.shim.ChaincodeException;
-import org.hyperledger.fabric.shim.ChaincodeStub;    //ChaincodeStub构建状态数据库，用来访问和修改账本，且在链码之间调用
+import org.hyperledger.fabric.shim.ChaincodeStub;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,17 +15,16 @@ import com.alibaba.fastjson.*;
 /**
  * Class: Contract
  */
-//使用类级别的@Contract注解，定义合约名称和相关信息
 @Contract(
     name = "seller.Contract",
-    info = @Info(       //使用@Info注释，进一步定义合约具体信息：标题、描述、版本、证书信息、许可证、联系人
+    info = @Info(
         title = "Contract",
         description = "SmartContract for seller",
         version = "1.0.0",
-        license = @License(    //使用@License注释，进一步定义许可证信息：名称、url
+        license = @License(
             name = "Apache 2.0 License",
             url = "http://www.apache.org/licenses/LICENSE-2.0.html"),
-        contact = @Contact(   //使用@License注释，进一步定义联系人信息：邮箱、姓名
+        contact = @Contact(
             email = "313227220@qq.com",
             name = "Group3"
         )
