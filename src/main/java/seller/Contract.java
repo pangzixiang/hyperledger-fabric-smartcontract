@@ -1,11 +1,11 @@
 package seller;
 
 
-import org.hyperledger.fabric.contract.Context;  
-import org.hyperledger.fabric.contract.ContractInterface; 
-import org.hyperledger.fabric.contract.annotation.*;
+import org.hyperledger.fabric.contract.Context;    //引入事务上下文类，维护与交易逻辑相关的合同和交易信息
+import org.hyperledger.fabric.contract.ContractInterface;     //合约处理接口类,用来响应接收的事务处理
+import org.hyperledger.fabric.contract.annotation.*;//定义java注解的包
 import org.hyperledger.fabric.shim.ChaincodeException;
-import org.hyperledger.fabric.shim.ChaincodeStub;  
+import org.hyperledger.fabric.shim.ChaincodeStub;    //ChaincodeStub构建状态数据库，用来访问和修改账本，且在链码之间调用
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,16 +15,17 @@ import com.alibaba.fastjson.*;
 /**
  * Class: Contract
  */
+//使用类级别的@Contract注解，定义合约名称和相关信息
 @Contract(
     name = "seller.Contract",
-    info = @Info(       
+    info = @Info(       //使用@Info注释，进一步定义合约具体信息：标题、描述、版本、证书信息、许可证、联系人
         title = "Contract",
         description = "SmartContract for seller",
         version = "1.0.0",
-        license = @License(   
+        license = @License(    //使用@License注释，进一步定义许可证信息：名称、url
             name = "Apache 2.0 License",
             url = "http://www.apache.org/licenses/LICENSE-2.0.html"),
-        contact = @Contact(   
+        contact = @Contact(   //使用@License注释，进一步定义联系人信息：邮箱、姓名
             email = "313227220@qq.com",
             name = "Group3"
         )
@@ -156,7 +157,7 @@ public final class Contract implements ContractInterface {
         String orderNum = (String) discountRule.get("orderNum");
         String orderIDs = (String) discountRule.get("orderIDs");
         if(Interger.parseInt(orderNum)==0){
-            return "目前还有拼单参与。" ;
+            return "目前没有拼单参与。" ;
         }else{
             return "成功拼单数量：" + orderNum + ", \n成功拼单号分别为: " + orderIDs;
         }
@@ -189,5 +190,4 @@ public final class Contract implements ContractInterface {
             long endTime = Long.valueOf(discountRule.get("endTime"));
             return "优惠规则：" + discountRuleID + "目前的状态仍为开放，\n并且将在" + (endTime-currentTime)/3600 + "分" + (endTime-currentTime)%3600 +"秒后关闭";
         }
-
     }
