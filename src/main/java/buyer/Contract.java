@@ -63,6 +63,14 @@ public final class Contract implements ContractInterface {
             throw new ChaincodeException(errorMessage);
         }
         JSONObject discountRule =  JSONObject.parseObject(ruleString);
+        String orderIDs = discountRule.getString("orderIDs");
+        if(orderIDs == ""){
+            discountRule.put("orderIDs", groupBuyingID);
+        }else{
+            discountRule.put("orderIDs", orderIDs + "," +groupBuyingID);
+        }
+        String orderNum = discountRule.getString("orderNum");
+        discountRule.put("orderNum", orderNum+1);
         //判断优惠规则状态
         if (Integer.parseInt(discountRule.getString("ruleState")) == 0){
             String errorMessage = String.format(Message.RULE_STATE_ERROR.template(), discountRuleID);
