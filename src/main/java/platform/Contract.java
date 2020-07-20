@@ -26,7 +26,7 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 public final class Contract implements ContractInterface{
     enum Message {
         ARG_NUM_WRONG("Incorrect number of arguments '%s'");
-
+        USER_NOT_EXISTING("User '%s' does not exist.");
 
         private String tmpl;
 
@@ -69,3 +69,15 @@ public final class Contract implements ContractInterface{
 
     }
 }
+
+    @Transaction(name = "QueryCredit", intent = Transaction.TYPE.EVALUATE)
+    public void initCredit(final Context ctx, final String userID){
+        ChaincodeStub stub = ctx.getStub();
+        String value = stub.getStringState(userID+"-Credit");
+        if (value.isEmpty()) {
+            String errorMessage = String.format(Message.USER_NOT_EXISTING.template(), userID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        return "用户" + userID +"的信用分为："+ value;
+    }
