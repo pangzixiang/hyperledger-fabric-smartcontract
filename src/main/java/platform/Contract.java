@@ -24,17 +24,12 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
         )
 )
 @Default
-public final class Contract implements ContractInterface{
+public final class Contract implements ContractInterface {
     enum Message {
-<<<<<<< HEAD
-        ARG_NUM_WRONG("Incorrect number of arguments '%s'");
-        USER_NOT_EXISTING("User '%s' does not exist.");
-=======
         ARG_NUM_WRONG("Incorrect number of arguments '%s'"),
+        USER_NOT_EXISTING("User '%s' does not exist."),
         RULE_NOT_EXIST("rule '%s' not exist"),
         GROUP_BUYING_NOT_EXIST("this group buying order '%s' not exist");
-
->>>>>>> a26f2732d60cb1e9dbde6ea297bf13ba1f1b7de9
 
         private String tmpl;
 
@@ -49,37 +44,37 @@ public final class Contract implements ContractInterface{
     }
 
     @Transaction(name = "InitCredit", intent = Transaction.TYPE.SUBMIT)
-    public void initCredit(final Context ctx, final String userID){
+    public void initCredit(final Context ctx, final String userID) {
         ChaincodeStub stub = ctx.getStub();
-        stub.putStringState(userID+"-Credit", "100");
+        stub.putStringState(userID + "-Credit", "100");
     }
 
     @Transaction(name = "ChangeCredit", intent = Transaction.TYPE.SUBMIT)
-    public void changeCredit(final Context ctx, final String userID, final String changeValue){
+    public void changeCredit(final Context ctx, final String userID, final String changeValue) {
         ChaincodeStub stub = ctx.getStub();
-        String oldCredit = stub.getStringState(userID+"-Credit");
+        String oldCredit = stub.getStringState(userID + "-Credit");
         try {
             Integer.valueOf(changeValue);
-        }catch (Exception e){
-            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(),changeValue);
+        } catch (Exception e) {
+            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(), changeValue);
             System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage,e);
+            throw new ChaincodeException(errorMessage, e);
         }
 
         int newCredit = Integer.parseInt(oldCredit) + Integer.parseInt(changeValue);
-        if (newCredit < 0){
-            stub.putStringState(userID+"-Credit",String.valueOf(0));
+        if (newCredit < 0) {
+            stub.putStringState(userID + "-Credit", String.valueOf(0));
         }
 
-        stub.putStringState(userID+"-Credit",String.valueOf(newCredit));
+        stub.putStringState(userID + "-Credit", String.valueOf(newCredit));
 
     }
 
     @Transaction(name = "InitTrans", intent = Transaction.TYPE.SUBMIT)
-    public void initTrans(final Context ctx, final String discountRuleID, final String groupBuyingID){
+    public void initTrans(final Context ctx, final String discountRuleID, final String groupBuyingID) {
         ChaincodeStub stub = ctx.getStub();
         String discountRuleString = stub.getStringState(discountRuleID);
-        if (discountRuleString.isEmpty()){
+        if (discountRuleString.isEmpty()) {
             String errorMessage = String.format(Message.RULE_NOT_EXIST.template(), discountRuleID);
             System.out.println(errorMessage);
             throw new ChaincodeException(errorMessage);
@@ -87,32 +82,32 @@ public final class Contract implements ContractInterface{
         JSONObject discountRule = JSONObject.parseObject(discountRuleString);
 
         String groupBuyingString = stub.getStringState(groupBuyingID);
-        if (groupBuyingString.isEmpty()){
+        if (groupBuyingString.isEmpty()) {
             String errorMessage = String.format(Message.GROUP_BUYING_NOT_EXIST.template(), groupBuyingID);
             System.out.println(errorMessage);
             throw new ChaincodeException(errorMessage);
         }
         JSONObject groupBuying = JSONObject.parseObject(groupBuyingString);
 
-        if (groupBuying.getString("currentNum").equals(groupBuying.getString("groupNum"))){
+        if (groupBuying.getString("currentNum").equals(groupBuying.getString("groupNum"))) {
             int oldOrderNum = Integer.parseInt(discountRule.getString("orderNum"));
             String oldOrderIDs = discountRule.getString("orderIDs");
-            discountRule.put("orderNum", String.valueOf(oldOrderNum+1));
-            discountRule.put("orderIDs", oldOrderIDs+groupBuyingID+"/");
+            discountRule.put("orderNum", String.valueOf(oldOrderNum + 1));
+            discountRule.put("orderIDs", oldOrderIDs + groupBuyingID + "/");
         }
 
     }
 
-}
 
     @Transaction(name = "QueryCredit", intent = Transaction.TYPE.EVALUATE)
-    public void initCredit(final Context ctx, final String userID){
+    public String queryCredit(final Context ctx, final String userID) {
         ChaincodeStub stub = ctx.getStub();
-        String value = stub.getStringState(userID+"-Credit");
+        String value = stub.getStringState(userID + "-Credit");
         if (value.isEmpty()) {
             String errorMessage = String.format(Message.USER_NOT_EXISTING.template(), userID);
             System.out.println(errorMessage);
             throw new ChaincodeException(errorMessage);
         }
-        return "用户" + userID +"的信用分为："+ value;
+        return "用户" + userID + "的信用分为：" + value;
     }
+}
