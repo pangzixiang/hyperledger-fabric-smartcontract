@@ -50,22 +50,20 @@ public final class Contract implements ContractInterface{
     }
 
     @Transaction(name = "ChangeCredit", intent = Transaction.TYPE.SUBMIT)
-    public void changeCredit(final Context ctx, final String userID, final String type){
+    public void changeCredit(final Context ctx, final String userID, final String changeValue){
         ChaincodeStub stub = ctx.getStub();
         String oldCredit = stub.getStringState(userID+"-Credit");
         try {
-            Integer.valueOf(type);
+            Integer.valueOf(changeValue);
         }catch (Exception e){
-            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(),type);
+            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(),changeValue);
             System.out.println(errorMessage);
             throw new ChaincodeException(errorMessage,e);
         }
 
-        int newCredit = Integer.parseInt(oldCredit) + Integer.parseInt(type);
+        int newCredit = Integer.parseInt(oldCredit) + Integer.parseInt(changeValue);
         if (newCredit < 0){
-            String errorMessage = String.format(Message.ARG_NUM_WRONG.template(),type);
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage);
+            stub.putStringState(userID+"-Credit",String.valueOf(0));
         }
 
         stub.putStringState(userID+"-Credit",String.valueOf(newCredit));
