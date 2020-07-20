@@ -31,7 +31,9 @@ import com.alibaba.fastjson.*;
 public final class Contract implements ContractInterface {
     enum Message {
         NUM_EXCEED("num exceed"),
-        RULE_STATE_ERROR("rule not valid");
+        RULE_STATE_ERROR("rule '%s' not valid"),
+        RULE_NOT_EXIST("rule '%s' not exist"),
+        GROUP_BUYING_NOT_EXIST("this group buying order '%s' not exist");
 
         private String tmpl;
 
@@ -54,17 +56,25 @@ public final class Contract implements ContractInterface {
                      final String goodID, final String discountRuleID){
         ChaincodeStub stub = ctx.getStub();
         //获取优惠规则
-        JSONObject discountRule =  JSONObject.parseObject(stub.getStringState(discountRuleID));
+        String ruleString = stub.getStringState(discountRuleID);
+        if (ruleString.isEmpty()){
+            String errorMessage = String.format(Message.RULE_NOT_EXIST.template(), discountRuleID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        JSONObject discountRule =  JSONObject.parseObject(ruleString);
         //判断优惠规则状态
         if (Integer.parseInt(discountRule.getString("ruleState")) == 0){
-            System.out.println(Message.RULE_STATE_ERROR.template());
-            throw new ChaincodeException(Message.RULE_STATE_ERROR.template());
+            String errorMessage = String.format(Message.RULE_STATE_ERROR.template(), discountRuleID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
         }else {
             int initTime = (int) System.currentTimeMillis();
             //判断优惠规则时限
             if (initTime > Integer.parseInt(discountRule.getString("endTime"))){
-                System.out.println(Message.RULE_STATE_ERROR.template());
-                throw new ChaincodeException(Message.RULE_STATE_ERROR.template());
+                String errorMessage = String.format(Message.RULE_STATE_ERROR.template(), discountRuleID);
+                System.out.println(errorMessage);
+                throw new ChaincodeException(errorMessage);
             }
             Map<String,String> map = new HashMap<>();
             map.put("userID",userID);
@@ -92,13 +102,20 @@ public final class Contract implements ContractInterface {
                             final String groupBuyingID){
         ChaincodeStub stub = ctx.getStub();
         //获取拼单信息
-        JSONObject groupBuying =  JSONObject.parseObject(stub.getStringState(groupBuyingID));
+        String groupBuyingString = stub.getStringState(groupBuyingID);
+        if (groupBuyingString.isEmpty()){
+            String errorMessage = String.format(Message.GROUP_BUYING_NOT_EXIST.template(), groupBuyingID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        JSONObject groupBuying =  JSONObject.parseObject(groupBuyingString);
         String participateTime = String.valueOf(System.currentTimeMillis());
         //判断拼团时间
         JSONObject discountRule =  JSONObject.parseObject(stub.getStringState(groupBuying.getString("discountRuleID")));
         if (Integer.parseInt(participateTime) > Integer.parseInt(discountRule.getString("endTime"))){
-            System.out.println(Message.RULE_STATE_ERROR.template());
-            throw new ChaincodeException(Message.RULE_STATE_ERROR.template());
+            String errorMessage = String.format(Message.RULE_STATE_ERROR.template(), groupBuying.getString("discountRuleID"));
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
         }
         String userNum = String.valueOf(Integer.parseInt(groupBuying.getString("currentNum")) + 1);
         //判断人数是否超限
@@ -126,7 +143,13 @@ public final class Contract implements ContractInterface {
     public String queryGroupBuying(final Context ctx, final String groupBuyingID){
         ChaincodeStub stub = ctx.getStub();
         //查询当前拼团的状态
-        JSONObject groupBuying =  JSONObject.parseObject(stub.getStringState(groupBuyingID));
+        String groupBuyingString = stub.getStringState(groupBuyingID);
+        if (groupBuyingString.isEmpty()){
+            String errorMessage = String.format(Message.GROUP_BUYING_NOT_EXIST.template(), groupBuyingID);
+            System.out.println(errorMessage);
+            throw new ChaincodeException(errorMessage);
+        }
+        JSONObject groupBuying =  JSONObject.parseObject(groupBuyingString);
         String groupNum = groupBuying.getString("groupNum");
         String currentNum = groupBuying.getString("currentNum");
         return "成团人数:" + groupNum + ", 当前人数:" + currentNum;
