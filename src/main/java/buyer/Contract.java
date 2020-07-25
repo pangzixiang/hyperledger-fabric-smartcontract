@@ -50,7 +50,7 @@ public final class Contract implements ContractInterface {
      * Initialize Group Buying
      * @param ctx context
      */
-    @Transaction(name = "Init", intent = Transaction.TYPE.SUBMIT)
+    @Transaction(name = "BuyerInit", intent = Transaction.TYPE.SUBMIT)
     public void init(final Context ctx, final String userID,
                      final String sellerID,final String groupBuyingID,
                      final String goodID, final String discountRuleID){

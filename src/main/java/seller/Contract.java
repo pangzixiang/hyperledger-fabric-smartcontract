@@ -54,7 +54,7 @@ public final class Contract implements ContractInterface {
      *
      * @param ctx context
      */
-    @Transaction(name = "Init", intent = Transaction.TYPE.SUBMIT)
+    @Transaction(name = "SellerInit", intent = Transaction.TYPE.SUBMIT)
     public void init(final Context ctx, final String sellerID, final String discountRuleID, final String goodID, final String groupNum, final String firstBuyerPrice, final String otherBuyerPrice) {
         ChaincodeStub stub = ctx.getStub();
         Map<String, String> map = new HashMap<>();
