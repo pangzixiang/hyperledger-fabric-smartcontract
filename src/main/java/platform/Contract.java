@@ -51,21 +51,21 @@ public final class Contract implements ContractInterface {
     }
 
     @Transaction(name = "InitCredit", intent = Transaction.TYPE.SUBMIT)
-    public void initCredit(final Context ctx, final String userID) {
+    public String initCredit(final Context ctx, final String userID) {
         ChaincodeStub stub = ctx.getStub();
         stub.putStringState(userID + "-Credit", "100");
+        return "ok";
     }
 
     @Transaction(name = "ChangeCredit", intent = Transaction.TYPE.SUBMIT)
-    public void changeCredit(final Context ctx, final String userID, final String changeValue) {
+    public String changeCredit(final Context ctx, final String userID, final String changeValue) {
         ChaincodeStub stub = ctx.getStub();
         String oldCredit = stub.getStringState(userID + "-Credit");
         try {
             Integer.valueOf(changeValue);
         } catch (Exception e) {
             String errorMessage = String.format(Message.ARG_NUM_WRONG.template(), changeValue);
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage, e);
+            return errorMessage;
         }
 
         int newCredit = Integer.parseInt(oldCredit) + Integer.parseInt(changeValue);
@@ -74,30 +74,29 @@ public final class Contract implements ContractInterface {
         }
 
         stub.putStringState(userID + "-Credit", String.valueOf(newCredit));
+        return "ok";
 
     }
 
     @Transaction(name = "InitTrans", intent = Transaction.TYPE.SUBMIT)
-    public void initTrans(final Context ctx, final String discountRuleID, final String groupBuyingID) {
+    public String initTrans(final Context ctx, final String discountRuleID, final String groupBuyingID) {
         ChaincodeStub stub = ctx.getStub();
         String discountRuleString = stub.getStringState(discountRuleID);
         if (discountRuleString.isEmpty()) {
             String errorMessage = String.format(Message.RULE_NOT_EXIST.template(), discountRuleID);
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage);
+            return errorMessage;
         }
         JSONObject discountRule = JSONObject.parseObject(discountRuleString);
 
         String groupBuyingString = stub.getStringState(groupBuyingID);
         if (groupBuyingString.isEmpty()) {
             String errorMessage = String.format(Message.GROUP_BUYING_NOT_EXIST.template(), groupBuyingID);
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage);
+            return errorMessage;
         }
         JSONObject groupBuying = JSONObject.parseObject(groupBuyingString);
 
         if (groupBuying.getString("currentNum").equals(groupBuying.getString("groupNum"))) {
-            if(groupBuying.getString("discountRuleID").equals(discountRule.getString("discountRule"))){
+            if(groupBuying.getString("discountRuleID").equals(discountRuleID)){
                 discountRule.put("orderNum", "0");
                 discountRule.put("orderIDs", "");
                 String payerIDs = groupBuying.getString("userID");
@@ -119,32 +118,32 @@ public final class Contract implements ContractInterface {
                 map.put("receivables",String.valueOf(receivables));
                 //创建交易单
                 stub.putStringState(groupBuyingID+"-"+discountRuleID, JSON.toJSONString(map));
-                
+                return "ok";
+
             }else{
                 String errorMessage = String.format(Message.Transaction_ERROR.template(), groupBuyingID, discountRuleID);
-                System.out.println(errorMessage);
-                throw new ChaincodeException(errorMessage);
+                return errorMessage;
             }
         }else{
             String errorMessage = String.format(Message.GROUP_BUYING_NOT_SUCCESS.template(), groupBuyingID);
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage);
+            return errorMessage;
         }
-        
+
 
     }
 
     @Transaction(name = "ChangeTrans", intent = Transaction.TYPE.SUBMIT)
-    public void changeTrans(final Context ctx, final String transID, final String transState) {
+    public String changeTrans(final Context ctx, final String transID, final String transState) {
         ChaincodeStub stub = ctx.getStub();
         String transactionString = stub.getStringState(transID);
         if (transactionString.isEmpty()) {
             String errorMessage = String.format(Message.Transaction_NOT_EXIST.template(), transID);
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage);
+            return errorMessage;
         }
         JSONObject transaction = JSONObject.parseObject(transactionString);
         transaction.put("transState", transState);
+        stub.putStringState(transID,JSON.toJSONString(transaction));
+        return "ok";
     }
 
     @Transaction(name = "QueryTrans", intent = Transaction.TYPE.EVALUATE)
@@ -153,8 +152,7 @@ public final class Contract implements ContractInterface {
         String transactionString = stub.getStringState(transID);
         if (transactionString.isEmpty()) {
             String errorMessage = String.format(Message.Transaction_NOT_EXIST.template(), transID);
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage);
+            return errorMessage;
         }
         JSONObject transaction = JSONObject.parseObject(transactionString);
         String state = "";
@@ -172,8 +170,7 @@ public final class Contract implements ContractInterface {
         String value = stub.getStringState(userID + "-Credit");
         if (value.isEmpty()) {
             String errorMessage = String.format(Message.USER_NOT_EXISTING.template(), userID);
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage);
+            return errorMessage;
         }
         return "用户" + userID + "的信用分为：" + value;
     }
