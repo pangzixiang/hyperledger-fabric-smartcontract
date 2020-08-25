@@ -73,42 +73,48 @@ public final class Contract implements ContractInterface {
         ChaincodeStub stub = ctx.getStub();
         //获取优惠规则
         String ruleString = stub.getStringState(discountRuleID);
-        if (ruleString.isEmpty()){
-            String errorMessage = String.format(Message.RULE_NOT_EXIST.template(), discountRuleID);
-            return errorMessage;
-        }
-        JSONObject discountRule =  JSONObject.parseObject(ruleString);
-        String orderIDs = discountRule.getString("orderIDs");
-        if(orderIDs == ""){
-            discountRule.put("orderIDs", groupBuyingID);
+        //获取信用分信息
+        String credit = stub.getStringState(userID + "-Credit");
+        //判断信用分，进行拼团权限控制
+        if (Integer.parseInt(credit) < 60){
+                return "fail";
         }else{
-            discountRule.put("orderIDs", orderIDs + "-" +groupBuyingID);
-        }
-        String orderNum = discountRule.getString("orderNum");
-        discountRule.put("orderNum", String.valueOf(Integer.parseInt(orderNum)+1));
-        //判断优惠规则状态
-        if (Integer.parseInt(discountRule.getString("ruleState")) == 0){
-            String errorMessage = String.format(Message.RULE_STATE_ERROR.template(), discountRuleID);
-            return errorMessage;
-        }else {
-            Long initTime = System.currentTimeMillis();
-            //判断优惠规则时限
-            if (initTime > Long.valueOf(discountRule.getString("endTime"))){
-                String errorMessage = String.format(Message.RULE_TIMEOUT.template(), discountRuleID);
-                return errorMessage;
-            }
-            Map<String,String> map = new HashMap<>();
-            map.put("userID",userID);
-            map.put("sellerID",discountRule.getString("sellerID"));
-            map.put("groupBuyingID",groupBuyingID);
-            map.put("initTime",String.valueOf(initTime));
-            map.put("groupNum",discountRule.getString("groupNum"));
-            map.put("goodID",discountRule.getString("goodID"));
-            map.put("currentNum", "1");
-            map.put("discountRuleID",discountRuleID);
-            //初始化（新建拼单）
-            stub.putStringState(groupBuyingID,JSON.toJSONString(map));
-            return "ok";
+                if (ruleString.isEmpty()){
+                    String errorMessage = String.format(Message.RULE_NOT_EXIST.template(), discountRuleID);
+                    return errorMessage;
+                }
+                JSONObject discountRule =  JSONObject.parseObject(ruleString);
+                String orderIDs = discountRule.getString("orderIDs");
+                if(orderIDs == ""){
+                    discountRule.put("orderIDs", groupBuyingID);
+                }else{
+                    discountRule.put("orderIDs", orderIDs + "-" +groupBuyingID);
+                }
+                String orderNum = discountRule.getString("orderNum");
+                discountRule.put("orderNum", String.valueOf(Integer.parseInt(orderNum)+1));
+                //判断优惠规则状态
+                if (Integer.parseInt(discountRule.getString("ruleState")) == 0){
+                    String errorMessage = String.format(Message.RULE_STATE_ERROR.template(), discountRuleID);
+                    return errorMessage;
+                }else {
+                    Long initTime = System.currentTimeMillis();
+                    //判断优惠规则时限
+                    if (initTime > Long.valueOf(discountRule.getString("endTime"))){
+                        String errorMessage = String.format(Message.RULE_TIMEOUT.template(), discountRuleID);
+                        return errorMessage;
+                    }
+                    Map<String,String> map = new HashMap<>();
+                    map.put("userID",userID);
+                    map.put("sellerID",discountRule.getString("sellerID"));
+                    map.put("groupBuyingID",groupBuyingID);
+                    map.put("initTime",String.valueOf(initTime));
+                    map.put("groupNum",discountRule.getString("groupNum"));
+                    map.put("goodID",discountRule.getString("goodID"));
+                    map.put("currentNum", "1");
+                    map.put("discountRuleID",discountRuleID);
+                    //初始化（新建拼单）
+                    stub.putStringState(groupBuyingID,JSON.toJSONString(map));
+                    return "ok";
         }
 
     }
@@ -125,32 +131,38 @@ public final class Contract implements ContractInterface {
         ChaincodeStub stub = ctx.getStub();
         //获取拼单信息
         String groupBuyingString = stub.getStringState(groupBuyingID);
-        if (groupBuyingString.isEmpty()){
-            String errorMessage = String.format(Message.GROUP_BUYING_NOT_EXIST.template(), groupBuyingID);
-            return errorMessage;
-        }
-        JSONObject groupBuying =  JSONObject.parseObject(groupBuyingString);
-        Long participateTime = System.currentTimeMillis();
-        //判断拼团时间
-        JSONObject discountRule =  JSONObject.parseObject(stub.getStringState(groupBuying.getString("discountRuleID")));
-        if (participateTime > Long.valueOf(discountRule.getString("endTime"))){
-            String errorMessage = String.format(Message.RULE_TIMEOUT.template(), groupBuying.getString("discountRuleID"));
-            return errorMessage;
-        }
-        String userNum = String.valueOf(Integer.parseInt(groupBuying.getString("currentNum")) + 1);
-        //判断人数是否超限
-        if (Integer.parseInt(userNum) > Integer.parseInt(groupBuying.getString("groupNum"))){
-            return Message.NUM_EXCEED.template();
-        }
-        groupBuying.put("currentNum",userNum);
-        stub.putStringState(groupBuyingID,groupBuying.toJSONString());
-        Map<String,String> map = new HashMap<>();
-        map.put("userID", userID);
-        map.put("participateTime", String.valueOf(participateTime));
-        map.put("groupBuyingID",groupBuyingID);
-        //参加拼团
-        stub.putStringState(groupBuyingID+"-"+userNum,JSON.toJSONString(map));
-        return "ok";
+        //获取信用分信息
+        String credit = stub.getStringState(userID + "-Credit");
+        //判断信用分，进行拼团权限控制
+        if (Integer.parseInt(credit) < 20){
+                return "fail";
+        }else{
+                if (groupBuyingString.isEmpty()){
+                    String errorMessage = String.format(Message.GROUP_BUYING_NOT_EXIST.template(), groupBuyingID);
+                    return errorMessage;
+                }
+                JSONObject groupBuying =  JSONObject.parseObject(groupBuyingString);
+                Long participateTime = System.currentTimeMillis();
+                //判断拼团时间
+                JSONObject discountRule =  JSONObject.parseObject(stub.getStringState(groupBuying.getString("discountRuleID")));
+                if (participateTime > Long.valueOf(discountRule.getString("endTime"))){
+                    String errorMessage = String.format(Message.RULE_TIMEOUT.template(), groupBuying.getString("discountRuleID"));
+                    return errorMessage;
+                }
+                String userNum = String.valueOf(Integer.parseInt(groupBuying.getString("currentNum")) + 1);
+                //判断人数是否超限
+                if (Integer.parseInt(userNum) > Integer.parseInt(groupBuying.getString("groupNum"))){
+                    return Message.NUM_EXCEED.template();
+                }
+                groupBuying.put("currentNum",userNum);
+                stub.putStringState(groupBuyingID,groupBuying.toJSONString());
+                Map<String,String> map = new HashMap<>();
+                map.put("userID", userID);
+                map.put("participateTime", String.valueOf(participateTime));
+                map.put("groupBuyingID",groupBuyingID);
+                //参加拼团
+                stub.putStringState(groupBuyingID+"-"+userNum,JSON.toJSONString(map));
+                return "ok";
     }
 
     /**
@@ -248,24 +260,29 @@ public final class Contract implements ContractInterface {
     public String close(final Context ctx, final String discountRuleID) {
         ChaincodeStub stub = ctx.getStub();
         JSONObject discountRule = JSONObject.parseObject(stub.getStringState(discountRuleID));
-
-        // 优惠规则不存在
-        if (discountRule.isEmpty()) {
-            String errorMessage = String.format(Message.DISCOUNTRULE_NOT_EXISTING.template(), discountRuleID);
-            return errorMessage;
-        }
-        //查询当前优惠规则的状态
-        String ruleState = discountRule.getString("ruleState");
-        if (Integer.parseInt(ruleState) == 0) {
-            String errorMessage = String.format(Message.RULE_STATE_ERROR.template(), ruleState);
-            return errorMessage;
-        } else {
-            discountRule.put("duration", "0");
-            discountRule.put("startTime", "0");
-            discountRule.put("endTime", "0");
-            discountRule.put("ruleState", "0");
-            stub.putStringState(discountRuleID,JSON.toJSONString(discountRule));
-            return "ok";
+        //获取当前时间
+        Long currentTime = System.currentTimeMillis();
+        String endTime = discountRule.getString("endTime");
+        if (Long.valueOf(endTime)<currentTime){
+                return "fail";
+        }else{
+                // 优惠规则不存在
+                if (discountRule.isEmpty()) {
+                    String errorMessage = String.format(Message.DISCOUNTRULE_NOT_EXISTING.template(), discountRuleID);
+                    return errorMessage;
+                }
+                //查询当前优惠规则的状态
+                String ruleState = discountRule.getString("ruleState");
+                if (Integer.parseInt(ruleState) == 0) {
+                    String errorMessage = String.format(Message.RULE_STATE_ERROR.template(), ruleState);
+                    return errorMessage;
+                } else {
+                    discountRule.put("duration", "0");
+                    discountRule.put("startTime", "0");
+                    discountRule.put("endTime", "0");
+                    discountRule.put("ruleState", "0");
+                    stub.putStringState(discountRuleID,JSON.toJSONString(discountRule));
+                    return "ok";
         }
     }
 
